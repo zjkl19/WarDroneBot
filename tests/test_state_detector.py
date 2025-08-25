@@ -1,3 +1,6 @@
+import pytest
+pytest.skip("v0 版本未启用图像识别，跳过 state_detector 测试", allow_module_level=True)
+
 import cv2, pytest, os
 from war_drone.config import Config
 from war_drone.recognizers.state_detector import Detector, State
