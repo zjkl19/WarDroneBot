@@ -25,16 +25,24 @@ class SimpleSupportBot:
         time.sleep(base_delay + random.random()*self.rand["delay_jitter_s"])
 
     def _support_loop(self, duration_s):
-        next_time = { "support1": 0.0, "support2": 0.0, "support3": 0.0, "support4": 0.0 }
+        # 从配置里自动收集所有 support* 键
+        support_keys = sorted([k for k in self.c.keys() if k.startswith("support")])
+        next_time = { k: 0.0 for k in support_keys }
+
         end = time.time() + duration_s
         while time.time() < end:
             now = time.time()
-            for key in next_time:
+            for key in support_keys:
+                # 没设置冷却就默认 30s
+                cd = float(self.cd.get(key, 30.0))
                 if now >= next_time[key]:
-                    try: self._tap(key, base_delay=0.08)
-                    except Exception: pass
-                    next_time[key] = now + self.cd[key]
+                    try:
+                        self._tap(key, base_delay=0.08)
+                    except Exception:
+                        pass
+                    next_time[key] = now + cd
             time.sleep(1.0)
+
 
     def run_one_round(self):
         print("[INFO] Launch game")
