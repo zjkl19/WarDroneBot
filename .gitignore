@@ -1,0 +1,45 @@
+# --- Python 基本 ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+pip-wheel-metadata/
+
+# --- VS Code ---
+.vscode/
+.history/
+
+# --- Pytest/缓存 ---
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- 日志与运行时产物 ---
+logs/
+*.log
+
+# --- 临时截图/可视化输出 ---
+out_vis/
+tmp/
+screens/
+captures/
+
+# --- 本地配置（如你以后添加） ---
+configs/local*.json*
+*.local.json*
+*.secrets.*
+
+# --- 模板/资产（可选忽略：如你不想把大图传到仓库） ---
+# 取消注释以忽略你的原始整屏图/模板图
+# templates/
+# tests/assets/
+
+# --- OS 杂项 ---
+.DS_Store
+Thumbs.db

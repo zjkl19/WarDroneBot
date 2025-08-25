@@ -1,0 +1,45 @@
+{
+  // 游戏包名
+  "package": "com.miniclip.drone1",
+
+  // 屏幕分辨率（横屏）
+  "screen": { "width": 2670, "height": 1200 },
+
+  // 关键点击坐标（相对坐标 0~1）
+  "coords": {
+    "list_start": [0.82, 0.87],   // 任务列表“开始游戏”
+    "pre_start":  [0.88, 0.88],   // 战前“开始游戏”
+    "collect":    [0.18, 0.86],   // 结算“收集/继续”
+    "menu":       [0.96, 0.08],   // 右上≡（兜底返回）
+    "support1":   [0.78, 0.90],   // 支援1：坦克
+    "support2":   [0.84, 0.90],   // 支援2：狙击
+    "support3":   [0.90, 0.90],   // 支援3：范围炸弹1
+    "support4":   [0.96, 0.90],   // 支援4：范围炸弹2
+  },
+
+  // 时序（秒）
+  "timing": {
+    "launch_wait_s":       6.0,   // 启动游戏后等待
+    "prebattle_wait_s":    8.0,   // 战前“开始”后进入战斗的等待
+    "combat_seconds":      360,   // 战斗持续时间（可按你实测调整）
+    "settle_wait_s":       6.0,   // 战斗后等待结算出现
+    "post_collect_wait_s": 4.0,   // 点“收集”后等待
+  },
+
+  // 支援冷却（秒）—— 简单定时轮询点击
+  "support_cd": {
+    "support1": 35.0,
+    "support2": 28.0,
+    "support3": 30.0,
+    "support4": 40.0,
+  },
+
+  // 体力策略（固定等待一格体力）
+  "energy": {
+    "recover_minutes_per_point": 15,
+    "sleep_safety_seconds": 30,   // 安全余量（提前结束等待）
+  },
+
+  // 点击与延时的随机抖动
+  "random": { "tap_jitter_px": 16, "delay_jitter_s": 0.25 },
+}
