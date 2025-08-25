@@ -26,3 +26,7 @@ class ADBClient:
 
     def kill(self, pkg):
         self._adb("shell","am","force-stop", pkg)
+
+    def screencap(self) -> bytes:
+        # PNG bytes
+        return self._adb("exec-out", "screencap", "-p")

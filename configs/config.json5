@@ -24,10 +24,10 @@
 
   // 时序（秒）
   "timing": {
-    "launch_wait_s":       6.0,   // 启动游戏后等待
+    "launch_wait_s":       20.0,   // 启动游戏后等待
     "prebattle_wait_s":    8.0,   // 战前“开始”后进入战斗的等待
-    "combat_seconds":      360,   // 战斗持续时间（可按你实测调整）
-    "settle_wait_s":       6.0,   // 战斗后等待结算出现
+    "combat_seconds":      300,   // 战斗持续时间（可按你实测调整）
+    "settle_wait_s":       8.0,   // 战斗后等待结算出现
     "post_collect_wait_s": 4.0,   // 点“收集”后等待
   },
 
@@ -49,4 +49,9 @@
 
   // 点击与延时的随机抖动
   "random": { "tap_jitter_px": 16, "delay_jitter_s": 0.25 },
+
+  click_profiles: {
+  relaxed: { jitter_px: 10,  base_delay: 0.12, delay_jitter_s: 0.20 }, // 刷支援/通用
+  precise: { jitter_px: 0,   base_delay: 0.08, delay_jitter_s: 0.00 }  // 精确瞄准
+},
 }
