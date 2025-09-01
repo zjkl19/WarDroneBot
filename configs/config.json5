@@ -1,9 +1,6 @@
 {
-  // 游戏包名
-  "package": "com.miniclip.drone1",
-
-  // 屏幕分辨率（横屏）
-  "screen": { "width": 2670, "height": 1200 },
+  // 屏幕分辨率（小米14：2670x1200）
+  screen: { width: 2670, height: 1200 },
 
   // 关键点击坐标（相对坐标 0~1）
   coords: {
@@ -12,8 +9,7 @@
     collect:    [0.18, 0.86],
     menu:       [0.96, 0.08],
 
-    // 战斗页右下 6 个支援
-    // 这组初值按你截图估算：从左到右基本均匀分布
+    // 战斗页右下 6 个支援（你核对的版本）
     support1:   [0.650, 0.90],   // 坦克
     support2:   [0.710, 0.90],   // 准星/狙击
     support3:   [0.765, 0.90],   // 炸弹1
@@ -22,36 +18,53 @@
     support6:   [0.940, 0.90],   // 炸弹4
   },
 
-  // 时序（秒）
-  "timing": {
-    "launch_wait_s":       20.0,   // 启动游戏后等待
-    "prebattle_wait_s":    8.0,   // 战前“开始”后进入战斗的等待
-    "combat_seconds":      300,   // 战斗持续时间（可按你实测调整）
-    "settle_wait_s":       8.0,   // 战斗后等待结算出现
-    "post_collect_wait_s": 4.0,   // 点“收集”后等待
-  },
-
-  // 冷却时间新增 support5（按和炸弹相近的保守值，后续你可再调）
-  support_cd: {
-    support1: 35.0,
-    support2: 28.0,
-    support3: 30.0,
-    support4: 40.0,
-    support5: 38.0,
-    support6: 38.0,
-  },
-
-  // 体力策略（固定等待一格体力）
-  "energy": {
-    "recover_minutes_per_point": 15,
-    "sleep_safety_seconds": 30,   // 安全余量（提前结束等待）
-  },
-
-  // 点击与延时的随机抖动
-  "random": { "tap_jitter_px": 16, "delay_jitter_s": 0.25 },
-
-  click_profiles: {
-  relaxed: { jitter_px: 10,  base_delay: 0.12, delay_jitter_s: 0.20 }, // 刷支援/通用
-  precise: { jitter_px: 0,   base_delay: 0.08, delay_jitter_s: 0.00 }  // 精确瞄准
-},
+  // 扩展状态：想新增任何状态，只需在这里添加配置 + 放模板即可
+  // 字段说明：
+  // - name: 状态名（建议与数据集子目录同名 tests/dataset/<name>）
+  // - anchor: 使用 coords 中哪个锚点来截 ROI
+  // - templates: 在 templates/ 下的模板文件列表；可带 alpha 或 *_mask.png 掩码
+  // - roi_half_size: [半宽, 半高] 像素
+  // - roi_offset_pct: [dx, dy] 相对屏偏移（可选，正右负左、正下负上）
+  // - use_edges: 是否对该状态启用“边缘预处理”（可选，缺省继承全局）
+  // - use_mask: 是否启用模板掩码（可选，缺省继承全局）
+  // - combine_mode: "max" | "and_min_top2"（多模板组合策略；默认 "max"）
+  extra_states: [
+    {
+      name: "splash",               // 启动/加载页（示例）
+      anchor: "menu",
+      templates: ["logo_mini.png"], // 你需要在 templates/ 放入该模板
+      roi_half_size: [260, 160],
+      roi_offset_pct: [0.00, -0.02],
+      use_edges: true,
+      use_mask: true,
+      combine_mode: "max",
+    },
+    {
+      name: "settlement_noads",     // 结算-无广告按钮（示例）
+      anchor: "collect",
+      templates: ["btn_collect.png"],
+      roi_half_size: [280, 160],
+      use_edges: true,
+      use_mask: true,
+      combine_mode: "max",
+    },
+    {
+      name: "settlement_ads",       // 结算-带广告按钮（示例）
+      anchor: "collect",
+      templates: ["btn_watch_ad.png", "badge_x2.png"],
+      roi_half_size: [300, 180],
+      use_edges: true,
+      use_mask: true,
+      combine_mode: "and_min_top2", // 两张都要高分才判定
+    },
+    {
+      name: "upgrade",              // 武器升级页（示例）
+      anchor: "menu",
+      templates: ["tab_upgrade.png", "btn_upgrade.png"],
+      roi_half_size: [300, 180],
+      use_edges: true,
+      use_mask: true,
+      combine_mode: "max",
+    },
+  ],
 }

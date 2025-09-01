@@ -1,43 +1,45 @@
-import argparse, time, os
-from .simple_bot import SimpleSupportBot
-from .logger import Logger, now_str
+# war_drone/runner.py
+import argparse
+import time
+from war_drone.simple_bot import SimpleSupportBot
+
+def parse_args():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--serial", default=None, help="adb 设备序列号（可选）")
+    ap.add_argument("--once", action="store_true", help="只执行一局（一次循环）")
+    ap.add_argument("--minutes", type=int, default=None, help="运行多少分钟（与 --once 互斥）")
+    ap.add_argument("--no-edges", action="store_true", help="禁用边缘预处理")
+    ap.add_argument("--no-mask", action="store_true", help="禁用模板掩码匹配")
+    ap.add_argument("--debug", action="store_true", help="更详细日志输出")
+    return ap.parse_args()
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--config", type=str, default="configs/config.json5", help="配置文件路径（JSON5）")
-    ap.add_argument("--for-minutes", type=float, default=0.0, help="总运行时长（分钟，0=无限）")
-    ap.add_argument("--once", action="store_true", help="只跑一局（不循环等体力）")
-    ap.add_argument("--serial", type=str, default=None, help="ADB 设备序列号(可选)")
-    ap.add_argument("--session-name", type=str, default=None, help="会话目录名（默认用时间戳）")
-    args = ap.parse_args()
-
-    session = args.session_name or now_str()
-    session_dir = os.path.join("runs", session)
-    log = Logger(session_dir=session_dir)
-
-    log.info("SESSION DIR:", session_dir)
-    log.info("CONFIG:", args.config)
-
-    bot = SimpleSupportBot(cfg_path=args.config, serial=args.serial, logger=log)
+    args = parse_args()
+    bot = SimpleSupportBot(
+        serial=args.serial,
+        use_edges=not args.no_edges,
+        use_mask=not args.no_mask,
+        debug=args.debug,
+    )
 
     if args.once:
-        log.info("MODE: once")
-        bot.run_one_round()
-        log.info("DONE one round")
+        bot.run_one_cycle()
         return
 
-    log.info("MODE: loop", f"for {args.for_minutes} minutes (0 = infinite)")
-    end_ts = time.time() + args.for_minutes*60 if args.for_minutes>0 else float("inf")
+    if args.minutes is None:
+        print("[INFO] 未指定 --minutes，默认跑 30 分钟")
+        end_ts = time.time() + 30*60
+    else:
+        end_ts = time.time() + args.minutes*60
+
     i = 0
     while time.time() < end_ts:
         i += 1
-        log.info(f"=== LOOP #{i} ===")
-        try:
-            bot.run_one_round()
-        except Exception as e:
-            log.err("Loop exception:", e)
-            time.sleep(3)
-        bot.sleep_for_energy()
+        print(f"[INFO] 开始第 {i} 次循环")
+        bot.run_one_cycle()
+        # 体力机制：每次 1 点体力，15 分钟恢复 1 点
+        # 如果你希望等待体力，可在此处 sleep；第一版我们不自动等待，交由你手动控制 --minutes 或 --once。
+        time.sleep(3)
 
 if __name__ == "__main__":
     main()
