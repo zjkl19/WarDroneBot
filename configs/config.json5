@@ -1,5 +1,5 @@
 {
-  // 屏幕分辨率（小米14：2670x1200）
+  // 屏幕分辨率（小米14）
   screen: { width: 2670, height: 1200 },
 
   // 关键点击坐标（相对坐标 0~1）
@@ -9,38 +9,36 @@
     collect:    [0.18, 0.86],
     menu:       [0.96, 0.08],
 
-    // 战斗页右下 6 个支援（你核对的版本）
+    // 战斗页右下 6 个支援
     support1:   [0.650, 0.90],   // 坦克
     support2:   [0.710, 0.90],   // 准星/狙击
     support3:   [0.765, 0.90],   // 炸弹1
     support4:   [0.820, 0.90],   // 炸弹2
     support5:   [0.880, 0.90],   // 炸弹3
     support6:   [0.940, 0.90],   // 炸弹4
+
+    splash_logo:  [0.50, 0.80],   // splash 锚点 → “WAR DRONE” 字样中心
+    upgrade_menu: [0.075, 0.64],  // 左栏“武器”按钮中心（经验值，可微调）
+
+    // Combat 识别专用锚点
+    hp_bar:      [0.50, 0.045],   // 顶部生命条中心（心形+绿色条）
+    goal_text:   [0.90, 0.865],   // 右下角“目标：x%”区域中心
+    // 如果日后想用十字准星，可再补一个：crosshair: [0.50, 0.50],
   },
 
-  // 扩展状态：想新增任何状态，只需在这里添加配置 + 放模板即可
-  // 字段说明：
-  // - name: 状态名（建议与数据集子目录同名 tests/dataset/<name>）
-  // - anchor: 使用 coords 中哪个锚点来截 ROI
-  // - templates: 在 templates/ 下的模板文件列表；可带 alpha 或 *_mask.png 掩码
-  // - roi_half_size: [半宽, 半高] 像素
-  // - roi_offset_pct: [dx, dy] 相对屏偏移（可选，正右负左、正下负上）
-  // - use_edges: 是否对该状态启用“边缘预处理”（可选，缺省继承全局）
-  // - use_mask: 是否启用模板掩码（可选，缺省继承全局）
-  // - combine_mode: "max" | "and_min_top2"（多模板组合策略；默认 "max"）
+  // 额外 UI 状态的检测配置（会与默认的 list/prebattle/settlement 合并/覆盖）
   extra_states: [
     {
-      name: "splash",               // 启动/加载页（示例）
-      anchor: "menu",
-      templates: ["logo_mini.png"], // 你需要在 templates/ 放入该模板
-      roi_half_size: [260, 160],
-      roi_offset_pct: [0.00, -0.02],
+      name: "splash",
+      anchor: "splash_logo",
+      templates: ["logo_war_drone.png"],  // 你用 crop_template 裁出来的模板
+      roi_half_size: [320, 140],          // 可按需要微调
       use_edges: true,
       use_mask: true,
       combine_mode: "max",
     },
     {
-      name: "settlement_noads",     // 结算-无广告按钮（示例）
+      name: "settlement_noads",           // 结算页没有广告按钮
       anchor: "collect",
       templates: ["btn_collect.png"],
       roi_half_size: [280, 160],
@@ -49,22 +47,29 @@
       combine_mode: "max",
     },
     {
-      name: "settlement_ads",       // 结算-带广告按钮（示例）
-      anchor: "collect",
-      templates: ["btn_watch_ad.png", "badge_x2.png"],
-      roi_half_size: [300, 180],
-      use_edges: true,
-      use_mask: true,
-      combine_mode: "and_min_top2", // 两张都要高分才判定
-    },
-    {
-      name: "upgrade",              // 武器升级页（示例）
-      anchor: "menu",
-      templates: ["tab_upgrade.png", "btn_upgrade.png"],
-      roi_half_size: [300, 180],
+      name: "upgrade",
+      anchor: "upgrade_menu",
+      templates: ["menu_weapons_glow.png"],  // 你裁出的左栏“武器”高亮
+      roi_half_size: [140, 140],
       use_edges: true,
       use_mask: true,
       combine_mode: "max",
     },
-  ],
+
+    // —— 关键：Combat 改为“多模板融合” —— //
+    {
+      name: "combat",
+      anchor: "hp_bar",                  // 以生命条为主 ROI
+      templates: [
+        { file: "combat_hp.png",   weight: 0.7 },  // 顶部生命条
+        { file: "combat_goal.png", weight: 0.5 },  // 右下角“目标：”
+        // 如需更稳可加十字准星：
+        // { file: "combat_crosshair.png", weight: 0.4 },
+      ],
+      roi_half_size: [420, 140],         // 围住顶部生命条一带
+      use_edges: true,
+      use_mask: true,
+      combine_mode: "sum",                // 多模板加权求和（也可试 and_min）
+    },
+  ]
 }
