@@ -1,0 +1,75 @@
+python -m scripts.paddle_runner --serial e5081c2a 
+  --cfg configs/ocr_states_fsm.json5 
+  --det-dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer" 
+  --rec-dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer" 
+  --cls-dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer" 
+  --combat-macro recordings/practical04.json --combat-macro-loops 1 
+  --max-combat 2 --prestart-macro --prestart-delay 0.1 --interval 0.8
+
+python -m scripts.paddle_runner --serial e5081c2a 
+  --cfg configs/ocr_states_fsm.json5 
+  --det-dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer" 
+  --rec-dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer" 
+  --cls-dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer" 
+  --combat-macro recordings/practical04.json --combat-macro-loops 1  --max-combat 2 --prestart-macro --prestart-delay 0.1 --interval 0.3
+
+python -m scripts.record_macro_device --name practical04 --serial e5081c2a --device /dev/input/event7 --debug
+
+python -m scripts.play_macro --file recordings/practical04.json --serial e5081c2a --loops 1
+
+python -m scripts.point_picker --screen combat.png --max-width 1920
+
+python -m scripts.paddle_runner --serial e5081c2a   --cfg configs/ocr_states_fsm.json5 
+  --det-dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer" 
+  --rec-dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer" 
+  --cls-dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer" 
+  --interval 1.5
+
+python -m scripts.paddle_runner --serial e5081c2a --dry-run   --cfg configs/ocr_states_fsm.json5 
+  --det-dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer" 
+  --rec-dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer" 
+  --cls-dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer" 
+  --interval 1.5
+
+python -m scripts.ocr_state_fsm_tester_paddle   --image vip_ad.png   --cfg configs/ocr_states_fsm.json5   --det_dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer"   --rec_dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer"   --cls_dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer"
+
+python -m scripts.ocr_state_fsm_tester_paddle   --image ready.png   --cfg configs/ocr_states_fsm.json5   --det_dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer"   --rec_dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer"   --cls_dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer"
+
+python -m scripts.ocr_state_fsm_tester_paddle   --image combat.png   --cfg configs/ocr_states_fsm.json5   --det_dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer"   --rec_dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer"   --cls_dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer"
+
+python -m scripts.ocr_state_fsm_tester_paddle   --image settlement.png   --cfg configs/ocr_states_fsm.json5   --det_dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer"   --rec_dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer"   --cls_dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer"
+
+python -m scripts.ocr_state_fsm_tester_paddle   --image mission_hard.png   --cfg configs/ocr_states_fsm.json5   --det_dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer"   --rec_dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer"   --cls_dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer"
+
+python -m scripts.ocr_state_fsm_tester_paddle   --image piggy_full.png   --cfg configs/ocr_states_fsm.json5   --det_dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer"   --rec_dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer"   --cls_dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer"
+
+
+python -m scripts.ocr_state_fsm_tester_paddle   --image ready.png   --cfg configs/ocr_states_fsm.json5   --det_dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer"   --rec_dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer"   --cls_dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer"
+
+截图到当前根目录：
+adb shell screencap -p /sdcard/weapon.png
+adb pull /sdcard/weapon.png
+
+adb shell screencap -p /sdcard/ready.png
+adb pull /sdcard/ready.png
+
+
+运行交互裁剪：
+python scripts/interactive_crop.py --screen vip_ad.png --max-width 1920
+操作说明（窗口标题 interactive_crop）：
+
+下面是状态机方案和调试代码：
+
+状态机模板（已写入 ocr_states_fsm.json5，可按需微调 ROI 与关键词）：
+
+main_menu：主菜单“开始游戏”按钮。
+ready：准备战斗界面“开始游戏”。
+combat：顶部血条/目标百分比。
+settlement：结算页“收集/收取/领取”。
+分支弹窗：free_gift（免费礼物/错过）、mission_hard（任务很难）、piggy_full（储蓄罐已满）、ad_other（广告/关闭/跳过兜底）。
+
+鼠标左键拖拽框选 ROI。
+放开后终端会打印像素坐标和归一化 [cx, cy, w, h]，可直接贴到配置。
+按 C 再打印一行可粘贴的 json5 示例。
+按 S 保存裁剪的区域图片到默认 templates 目录（可用 --out-dir、--name 定名）。
+按 R 重置，G 显示/隐藏网格，ESC 退出。

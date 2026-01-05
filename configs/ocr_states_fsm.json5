@@ -1,0 +1,134 @@
+{
+  // 设备分辨率（小米14 2670x1200 横屏）
+  screen: { width: 2670, height: 1200 },
+
+  // 相对 ROI：cx, cy, w, h（0~1），需按你的截屏微调
+  rois: {
+    // 主菜单：按钮 + 顶部标题栏/金币栏，降低误判
+    main_start_btn:   [0.86, 0.86, 0.1, 0.07],
+    main_top_title:   [0.79, 0.75, 0.04, 0.050],   // 右下角“最佳”
+
+    // 准备战斗额外标题（敌方）
+    ready_top_title:  [0.406554, 0.863333, 0.700749, 0.121667],
+
+    // 准备战斗
+    ready_start_btn:  [0.88, 0.88, 0.30, 0.12],
+
+    // 战斗血条
+    combat_hp:        [0.498876, 0.048333, 0.173034, 0.058333],
+
+    // 结算
+    settlement_collect: [0.144007, 0.8625, 0.086517, 0.08],
+    settlement_bonus_btn: [0.80, 0.86, 0.15, 0.12],  // 右下角领取+50% 按钮（请用截图微调）
+
+    // 弹窗类
+    free_gift_panel:    [0.316854, 0.784167, 0.102622, 0.078333],
+    mission_hard_panel: [0.327341, 0.617917, 0.121348, 0.070833],
+    mission_hard_title: [0.670787, 0.6125, 0.098876, 0.07],   // “这个任务很难”标题区域（请用截图微调）
+    piggy_full_panel:   [0.652809, 0.250833, 0.268165, 0.136667],
+    piggy_full_title:   [0.776404, 0.448333, 0.091386, 0.056667],   // 储蓄罐弹窗标题（你已储蓄了）
+    piggy_full_desc:    [0.735206, 0.685, 0.08015, 0.051667],   // 弹窗正文/按钮区域（立刻打开）
+    ad_panel:           [0.50, 0.50, 0.70, 0.30],
+
+    // 武器界面
+    weapon_title:      [0.356554, 0.519583, 0.053933, 0.054167],   // 顶部“武器/WEAPONS”标题（请用截图微调）
+    weapon_menu_btn:   [0.595318, 0.523333, 0.055805, 0.051667],   // 返回主菜单按钮区域
+    weapon_list_hint:  [0.812547, 0.524583, 0.091011, 0.055833],   // 中部列表/提示区
+
+    // VIP 广告弹窗（关闭/标题/按钮）
+    vip_close: [0.915, 0.12, 0.08, 0.10],
+    vip_title: [0.57809, 0.177083, 0.346442, 0.145833],
+    vip_body:  [0.329775, 0.275, 0.073783, 0.05],
+  },
+
+  // 可选模板留空；如需，可添加 {name, path, roi, method, thresh}
+  templates: [],
+
+  // 状态定义（按顺序评估；命中得 +1，辅以可选模板加分）
+  states: [
+    {
+      name: "main_menu",
+      rois: ["main_start_btn", "main_top_title"],
+      ocr: [
+        { roi: "main_start_btn", lang: "ch_sim", contains: ["开始游戏"], min_conf: 0.75 },
+        // 主菜单顶部/角落的固定文字：如：最佳/商店/菜单/成就 等，任一命中即可
+        { roi: "main_top_title", lang: "ch_sim", contains: ["最佳"], min_conf: 0.75 }
+      ]
+    },
+    {
+      name: "ready",
+      rois: ["ready_start_btn", "ready_top_title"],
+      ocr: [
+        { roi: "ready_start_btn", lang: "ch_sim", contains: ["开始游戏"], min_conf: 0.75 },
+        // 准备界面中央/上方的提示，如 敌方/情报/准备/战斗
+        { roi: "ready_top_title", lang: "ch_sim", contains: ["敌方","情报"], min_conf: 0.75 }
+      ]
+    },
+    {
+      name: "combat",
+      rois: ["combat_hp"],
+      ocr: [
+        // 识别百分比（生命值/目标进度）
+        { roi: "combat_hp", lang: "ch_sim", regex: "\\d+%", min_conf: 0.70 }
+      ]
+    },
+    {
+      name: "settlement",
+      rois: ["settlement_collect", "settlement_bonus_btn"],
+      ocr: [
+        { roi: "settlement_collect", lang: "ch_sim", contains: ["收集","收取","领取"], min_conf: 0.75 },
+        { roi: "settlement_bonus_btn", lang: "ch_sim", contains: ["领取","+50","50%"], min_conf: 0.75 }
+      ]
+    },
+    {
+      name: "free_gift",
+      rois: ["free_gift_panel"],
+      ocr: [
+        { roi: "free_gift_panel", lang: "ch_sim", all_contains: ["免费","礼物"], min_conf: 0.40 },
+        { roi: "free_gift_panel", lang: "ch_sim", contains: ["错过"], min_conf: 0.70 }
+      ]
+    },
+    {
+      name: "mission_hard",
+      rois: ["mission_hard_panel", "mission_hard_title"],
+      ocr: [
+        { roi: "mission_hard_panel", lang: "ch_sim", contains: ["任务很难","稍后再试","暂时不要"], min_conf: 0.40 },
+        { roi: "mission_hard_title", lang: "ch_sim", contains: ["带我走"], min_conf: 0.50 }
+      ]
+    },
+    {
+      name: "piggy_full",
+      rois: ["piggy_full_panel", "piggy_full_title", "piggy_full_desc"],
+      ocr: [
+        { roi: "piggy_full_panel", lang: "ch_sim", contains: ["储蓄罐已满","满了"], min_conf: 0.70 },
+        { roi: "piggy_full_title", lang: "ch_sim", contains: ["你已储蓄了"], min_conf: 0.70 },
+        { roi: "piggy_full_desc", lang: "ch_sim", contains: ["打开","优惠","储蓄"], min_conf: 0.70 }
+      ]
+    },
+    {
+      name: "ad_other",
+      rois: ["ad_panel"],
+      ocr: [
+        { roi: "ad_panel", lang: "ch_sim", contains: ["广告","关闭","跳过"], min_conf: 0.35 }
+      ]
+    },
+    {
+      name: "vip_ad",
+      rois: ["vip_close", "vip_title", "vip_body"],
+      ocr: [
+        { roi: "vip_title", lang: "ch_sim", contains: ["玩家俱乐部"], min_conf: 0.70 },
+        { roi: "vip_body",  lang: "ch_sim", contains: ["立即加入"], min_conf: 0.70 },
+        { roi: "vip_close", lang: "ch_sim", contains: ["×","X"], min_conf: 0.10 }
+      ]
+    },
+    {
+      name: "weapon",
+      rois: ["weapon_title", "weapon_menu_btn", "weapon_list_hint"],
+      ocr: [
+        { roi: "weapon_title", lang: "ch_sim", contains: ["机关炮","WEAPON","WEAPONS"], min_conf: 0.50 },
+        { roi: "weapon_menu_btn", lang: "ch_sim", contains: ["火箭弹"], min_conf: 0.35 },
+        { roi: "weapon_list_hint", lang: "ch_sim", contains: ["地狱火"], min_conf: 0.35 }
+      ]
+    }
+  ]
+}
