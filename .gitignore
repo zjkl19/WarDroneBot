@@ -40,6 +40,18 @@ configs/local*.json*
 # templates/
 # tests/assets/
 
+# --- YOLO 数据与输出（体积大） ---
+datasets/
+runs/
+tests/dataset/
+*.pt
+*.onnx
+*.engine
+*.pth
+
+# --- 本地工具虚拟环境 ---
+.venv_labelme/
+
 # --- OS 杂项 ---
 .DS_Store
 Thumbs.db

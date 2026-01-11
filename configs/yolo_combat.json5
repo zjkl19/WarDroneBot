@@ -1,0 +1,33 @@
+{
+  screen: {
+    width: 2670,
+    height: 1200,
+  },
+  classes: [
+    "Infantry",
+    "CV90Tank",
+    "Apache",
+    "CargoPlane",
+    "ArmoredJeep",
+    "Humvee",
+    "FuelTruck",
+    "LittleBird",
+    "AbramsTank",
+    "ScudLauncher",
+  ],
+  min_box_px: 6,
+  // UI masks to ignore when scoring targets (normalized coords).
+  // Each mask is [x, y, w, h].
+  masks: [
+    //[0.743071, 0.91, 0.507116, 0.156667], // bottom skill bar
+    //[0.149251, 0.807917, 0.273034, 0.374167],
+    //[0.896442, 0.052917, 0.186891, 0.075833], // top-right menu
+  ],
+  // Swipe region where camera rotation is safe.
+  swipe_region: [0.30, 0.25, 0.40, 0.50],
+  // Fire button placeholders (normalized coords), update later.
+  fire: {
+    pos: [0.10, 0.90],
+    hold_ms: 300,
+  },
+}

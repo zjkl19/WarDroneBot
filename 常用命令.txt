@@ -11,7 +11,11 @@ python -m scripts.paddle_runner --serial e5081c2a
   --det-dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer" 
   --rec-dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer" 
   --cls-dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer" 
-  --combat-macro recordings/practical04.json --combat-macro-loops 1  --max-combat 4 --prestart-macro --prestart-delay 0.1 --interval 0.3
+  --combat-macro recordings/mission10_01.json --combat-macro-loops 1  --max-combat 1 --prestart-macro --prestart-delay 0.1 --interval 0.3
+
+
+python -m scripts.record_macro_device --name mission10_01 --serial e5081c2a --device /dev/input/event7 --debug
+
 
 python -m scripts.record_macro_device --name practical04 --serial e5081c2a --device /dev/input/event7 --debug
 

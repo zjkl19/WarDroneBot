@@ -1,0 +1,15 @@
+采样 100 张 combat 截图（可以用现有脚本）
+python -m scripts.capture_dataset --state combat --count 100 --serial e5081c2a
+
+python -m scripts.yolo_detect_only   --serial e5081c2a --imgsz 2670   --model runs/detect/train4/weights/best.pt   --cfg configs/yolo_combat.json5   --device cpu   --conf 0.25   --save-dir runs/yolo_debug   --max-frames 100   --interval 0.2
+
+python -m scripts.yolo_predict_once   --model runs/detect/train4/weights/best.pt   --source combat.jpg   --imgsz 2670   --conf 0.10   --device cpu   --save-dir runs/yolo_pred
+
+
+python -m scripts.yolo_detect_only   --serial e5081c2a   --model runs/detect/train4/weights/best.pt   --cfg configs/yolo_combat.json5   --device cpu   --conf 0.25   --save-dir runs/yolo_debug   --max-frames 500   --interval 0.3
+
+python "C:\Users\林迪南\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\site-packages\labelImg\labelImg.py"
+
+python  "C:\Users\林迪南\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\Scripts\labelme.exe"
+
+python -m ultralytics detect train data=configs/yolo_combat.yaml model=yolov8n.pt imgsz=640 batch=2 epochs=100 device=0

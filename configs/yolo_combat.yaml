@@ -1,0 +1,22 @@
+path: datasets/combat_yolo
+train: images/train
+val: images/val
+names:
+  0: Infantry
+  1: CV90Tank
+  2: Apache
+  3: CargoPlane
+  4: ArmoredJeep
+  5: Humvee
+  6: FuelTruck
+  7: LittleBird
+  8: AbramsTank
+  9: ScudLauncher
+
+
+
+
+
+
+
+
