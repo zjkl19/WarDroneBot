@@ -20,6 +20,7 @@
     // 结算
     settlement_collect: [0.144007, 0.8625, 0.086517, 0.08],
     settlement_bonus_btn: [0.80, 0.86, 0.15, 0.12],  // 右下角领取+50% 按钮（请用截图微调）
+    settlement_collect_right: [0.87, 0.90, 0.20, 0.12], // 右下角绿色“收集”按钮（无广告/无加成）
 
     // 弹窗类
     free_gift_panel:    [0.316854, 0.784167, 0.102622, 0.078333],
@@ -74,9 +75,10 @@
     },
     {
       name: "settlement",
-      rois: ["settlement_collect", "settlement_bonus_btn"],
+      rois: ["settlement_collect", "settlement_bonus_btn", "settlement_collect_right"],
       ocr: [
         { roi: "settlement_collect", lang: "ch_sim", contains: ["收集","收取","领取"], min_conf: 0.75 },
+        { roi: "settlement_collect_right", lang: "ch_sim", contains: ["收集","收取","领取"], min_conf: 0.75 },
         { roi: "settlement_bonus_btn", lang: "ch_sim", contains: ["领取","+50","50%"], min_conf: 0.75 }
       ]
     },

@@ -63,6 +63,7 @@ def main():
     action_map = {
         "main_menu": (0.868165, 0.866667),
         "ready": (0.868165, 0.866667),
+        # 结算：可能有旧版左侧按钮，也可能只有右下角绿色“收集”
         "settlement": (0.150936, 0.85),
         "weapon": (0.098127, 0.543333),  # 武器界面点菜单返回
         # 弹窗关闭：默认点屏幕右上角，如需准确请改成具体 ROI 按钮
@@ -196,8 +197,23 @@ def main():
 
             pos = action_map.get(state)
             if pos:
-                x, y = _pct_to_px(pos, (W, H))
-                tap_px(x, y, label=state)
+                if state == "settlement":
+                    # 依次尝试左侧旧按钮、右下角新按钮（防止漏点）
+                    cand = [pos, (0.92, 0.93)]
+                    seen = set()
+                    for c in cand:
+                        if not c:
+                            continue
+                        key = tuple(c)
+                        if key in seen:
+                            continue
+                        seen.add(key)
+                        x, y = _pct_to_px(c, (W, H))
+                        tap_px(x, y, label=state)
+                        time.sleep(0.05)
+                else:
+                    x, y = _pct_to_px(pos, (W, H))
+                    tap_px(x, y, label=state)
                 # 点击 ready 后，如果启用 prestart-macro，则预约宏
                 if state == "ready" and args.prestart_macro and macro_events:
                     macro_scheduled_ts = time.time() + args.prestart_delay
