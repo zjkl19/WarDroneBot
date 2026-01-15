@@ -16,6 +16,7 @@
     "ScudLauncher",
   ],
   min_box_px: 6,
+
   // UI masks to ignore when scoring targets (normalized coords).
   // Each mask is [x, y, w, h].
   masks: [
@@ -23,11 +24,49 @@
     //[0.149251, 0.807917, 0.273034, 0.374167],
     //[0.896442, 0.052917, 0.186891, 0.075833], // top-right menu
   ],
+
   // Swipe region where camera rotation is safe.
   swipe_region: [0.30, 0.25, 0.40, 0.50],
+
   // Fire button placeholders (normalized coords), update later.
   fire: {
     pos: [0.10, 0.90],
     hold_ms: 300,
+  },
+
+  // AI 自瞄/开火运行参数（独立于 paddle 宏）
+  ai_runtime: {
+    imgsz: 2670,              // 实时推理分辨率（可按性能调高/调低）
+    conf: 0.32,               // 置信度阈值
+    min_box_px: 6,            // 过滤过小的框，步兵需小一些
+    aim_tolerance: 0.03,      // 与屏幕中心的相对距离容差；设为 0 必须对准中心
+    lead_k: 0.1,              // 速度 * lead_k 的提前量系数
+    lock_enable: true,        // 是否开启自动锁定目标
+    lock_reacquire_frames: 8, // 连续丢失多少帧后重新选目标
+    swipe_gain: 0.1,          // 准星偏移 -> 滑动向量的灵敏度
+    swipe_min_offset: 0.01,   // 小于该偏移不滑动（防抖）
+    swipe_duration: 0.12,     // 单次滑动时长（秒）
+    swipe_max_step: 0.10,     // 单次滑动的最大步长（相对坐标）
+    cooldown: {
+      hydra: 1.5,
+      hellfire: 2.0,
+    },
+    priority: [
+      "CV90Tank",
+      "Infantry",
+      "ArmoredJeep",
+      "FuelTruck",
+      "Humvee",
+      "Apache",
+      "LittleBird",
+      "CargoPlane",
+      "ScudLauncher",
+      "AbramsTank",
+    ],
+    fire_buttons: {
+      gun: [0.102247, 0.88],
+      hydra: [0.184644, 0.721667],
+      hellfire: [0.220599, 0.885],
+    },
   },
 }

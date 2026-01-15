@@ -4,7 +4,7 @@ python -m scripts.paddle_runner --serial e5081c2a
   --rec-dir "E:\.paddleocr\whl\rec\ch_PP-OCRv4_rec_infer" 
   --cls-dir "E:\.paddleocr\whl\ch_ppocr_mobile_v2.0_cls_infer" 
   --combat-macro recordings/practical04.json --combat-macro-loops 1 
-  --max-combat 5 --prestart-macro --prestart-delay 0.1 --interval 0.8
+  --max-combat 10 --prestart-macro --prestart-delay 0.1 --interval 0.5
 
 python -m scripts.paddle_runner --serial e5081c2a 
   --cfg configs/ocr_states_fsm.json5 
