@@ -3,3 +3,5 @@ numpy
 Pillow
 pytest
 json5
+ultralytics
+paddleocr

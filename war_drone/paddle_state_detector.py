@@ -3,11 +3,21 @@
 基于 PaddleOCR 的简易状态判定器，按 configs/ocr_states_fsm.json5 读取 ROI/规则。
 """
 from __future__ import annotations
+import importlib.util
+import os
 import re
 from typing import List, Tuple, Dict, Any
 
 import cv2
 import json5
+
+if os.name == "nt":
+    spec = importlib.util.find_spec("paddle")
+    if spec and spec.submodule_search_locations:
+        libs_dir = os.path.join(spec.submodule_search_locations[0], "libs")
+        if os.path.isdir(libs_dir):
+            os.add_dll_directory(libs_dir)
+
 from paddleocr import PaddleOCR
 
 

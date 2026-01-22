@@ -1,0 +1,8 @@
+--index-url https://download.pytorch.org/whl/cu124
+torch==2.6.0+cu124
+torchvision==0.21.0+cu124
+torchaudio==2.6.0+cu124
+--extra-index-url https://pypi.org/simple
+
+# PaddlePaddle GPU (CUDA 12.0 / cuDNN 8.9.1, Windows, Python 3.10)
+paddlepaddle-gpu @ https://paddle-wheel.bj.bcebos.com/2.6.1/windows/windows-gpu-cuda12.0-cudnn8.9.1-mkl-avx-vs2019/paddlepaddle_gpu-2.6.1.post120-cp310-cp310-win_amd64.whl

@@ -8,6 +8,7 @@ python -m scripts.ai_combat_runner   --serial e5081c2a   --model runs/detect/tra
 
 python -m scripts.yolo_detect_only   --serial e5081c2a --imgsz 2670   --model runs/detect/train4/weights/best.pt   --cfg configs/yolo_combat.json5   --device cpu   --conf 0.25   --save-dir runs/yolo_debug   --max-frames 100   --interval 0.2
 
+家里旧台式机：
 python -m scripts.yolo_predict_once   --model runs/detect/train4/weights/best.pt   --source combat.jpg   --imgsz 2670   --conf 0.10   --device cpu   --save-dir runs/yolo_pred
 参考：
 PS F:\PythonProjects\WarDroneBot> python -m scripts.yolo_predict_once   --model runs/detect/train4/weights/best.pt   --source combat.jpg   --imgsz 2670   --conf 0.10   --device cpu   --save-dir runs/yolo_pred
@@ -15,6 +16,30 @@ WARNING imgsz=[2670] must be multiple of max stride 32, updating to [2688]
 image 1/1 F:\PythonProjects\WarDroneBot\combat.jpg: 1216x2688 4 Infantrys, 1843.2ms
 Speed: 35.2ms preprocess, 1843.2ms inference, 163.3ms postprocess per image at shape (1, 3, 1216, 2688)
 Results saved to F:\PythonProjects\WarDroneBot\runs\yolo_pred
+
+家里新台式机：
+python -m scripts.yolo_predict_once   --model runs/detect/train4/weights/best.pt   --source combat.jpg   --imgsz 2670   --conf 0.10   --device 0   --save-dir runs/yolo_pred
+
+(.venv) PS D:\PythonProjects\WarDroneBot> python -m scripts.yolo_predict_once   --model runs/detect/train4/weights/best.pt   --source combat.jpg   --imgsz 2670   --conf 0.50   --device 0   --save-dir runs/yolo_pred
+
+WARNING imgsz=[2670] must be multiple of max stride 32, updating to [2688]
+image 1/1 D:\PythonProjects\WarDroneBot\combat.jpg: 1216x2688 4 Infantrys, 33.6ms
+Speed: 13.7ms preprocess, 33.6ms inference, 9.3ms postprocess per image at shape (1, 3, 1216, 2688)
+Results saved to D:\PythonProjects\WarDroneBot\runs\detect\runs\yolo_pred
+
+单位电脑：
+PS D:\Projects\WarDroneBot> python -m scripts.yolo_predict_once   --model runs/detect/train4/weights/best.pt   --source combat.jpg   --imgsz 2670   --conf 0.10   --device 0   --save-dir runs/yolo_pred  
+
+WARNING imgsz=[2670] must be multiple of max stride 32, updating to [2688]
+image 1/1 D:\Projects\WarDroneBot\combat.jpg: 1216x2688 4 Infantrys, 82.1ms
+Speed: 39.8ms preprocess, 82.1ms inference, 27.6ms postprocess per image at shape (1, 3, 1216, 2688)
+Results saved to D:\Projects\WarDroneBot\runs\yolo_pred
+
+PS D:\Projects\WarDroneBot> python -m scripts.yolo_predict_once   --model runs/detect/train4/weights/best.pt   --source combat.jpg   --imgsz 2670   --conf 0.50   --device 0   --save-dir runs/yolo_pred
+WARNING imgsz=[2670] must be multiple of max stride 32, updating to [2688]
+image 1/1 D:\Projects\WarDroneBot\combat.jpg: 1216x2688 4 Infantrys, 125.8ms
+Speed: 67.6ms preprocess, 125.8ms inference, 17.6ms postprocess per image at shape (1, 3, 1216, 2688)
+Results saved to D:\Projects\WarDroneBot\runs\yolo_pred
 
 
 python -m scripts.yolo_detect_only   --serial e5081c2a   --model runs/detect/train4/weights/best.pt   --cfg configs/yolo_combat.json5   --device cpu   --conf 0.25   --save-dir runs/yolo_debug   --max-frames 500   --interval 0.3
@@ -24,3 +49,17 @@ python "C:\Users\林迪南\AppData\Local\Packages\PythonSoftwareFoundation.Pytho
 python  "C:\Users\林迪南\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.10_qbz5n2kfra8p0\LocalCache\local-packages\Python310\Scripts\labelme.exe"
 
 python -m ultralytics detect train data=configs/yolo_combat.yaml model=yolov8n.pt imgsz=640 batch=2 epochs=100 device=0
+
+一、✅ 推荐的“正确解决方式”（工程师标准做法）
+✔ 只对「当前用户」放开，不影响系统安全
+
+在 PowerShell（非管理员） 中执行：
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+
+出现提示时，输入：
+Y
+这一步是 一次性设置，以后不会再弹。
+
+二、
+PS D:\PythonProjects\WarDroneBot> .\.venv\Scripts\Activate.ps1
+激活虚拟环境
