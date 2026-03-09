@@ -1,6 +1,15 @@
 
 python -m scripts.ai_combat_runner   --serial e5081c2a   --model runs/detect/train4/weights/best.pt   --cfg configs/yolo_combat.json5   --device cpu   --interval 0.2
 
+使用gpu
+python -m scripts.ai_combat_runner   --serial e5081c2a   --model runs/detect/train4/weights/best.pt   --cfg configs/yolo_combat.json5   --device 0   --interval 0.2
+
+测试
+python -m scripts.swipe_calibrate --serial e5081c2a --show-preview
+python -m scripts.aim_test --serial e5081c2a --model runs/detect/train4/weights/best.pt --show-preview --debug
+
+python -m scripts.aim_test_safe --serial e5081c2a --model runs/detect/train4/weights/best.pt --show-preview --debug
+
 采样 100 张 combat 截图（可以用现有脚本）
 python -m scripts.capture_dataset --state combat --count 100 --serial e5081c2a
 

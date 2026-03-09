@@ -18,7 +18,6 @@ import subprocess
 import json
 import logging
 import threading
-import traceback
 from typing import Optional, List, Dict, Any, Tuple
 from dataclasses import dataclass
 from enum import Enum
@@ -115,29 +114,26 @@ class MacroController:
     
     def start(self, reason: str = ""):
         """启动宏（非阻塞）"""
-        old_thread = None
         with self._lock:
             if self._state == MacroState.RUNNING:
                 return
-
-            if self._thread and self._thread.is_alive():
-                self._stop()
-                old_thread = self._thread
-
-        if old_thread and old_thread is not threading.current_thread():
-            old_thread.join(timeout=2.0)
-
-        with self._lock:
+            
+            # 停止当前宏
+            self._stop()
+            
+            # 准备启动
             self._stop_event.clear()
             self._state = MacroState.RUNNING
             self._scheduled_time = None
+            
+            # 启动线程
             self._thread = threading.Thread(
                 target=self._worker,
                 name="MacroWorker",
-                daemon=False
+                daemon=True
             )
             self._thread.start()
-
+            
             if reason:
                 print(f"[INFO] 宏启动: {reason}")
     
@@ -147,16 +143,6 @@ class MacroController:
             self._stop()
         if reason:
             print(f"[INFO] 宏停止: {reason}")
-
-    def cancel_scheduled(self, reason: str = ""):
-        """取消尚未开始的预约宏"""
-        with self._lock:
-            if self._state == MacroState.SCHEDULED:
-                self._scheduled_time = None
-                self._state = MacroState.IDLE
-                self._stop_event.clear()
-                if reason:
-                    print(f"[INFO] 已取消预约宏: {reason}")
     
     def _stop(self):
         """内部停止方法（必须在锁内调用）"""
@@ -168,24 +154,20 @@ class MacroController:
     def schedule(self, delay: float):
         """预约启动宏"""
         with self._lock:
-            if not self._events or self._state == MacroState.RUNNING:
+            if not self._events:
                 return
-            self._stop_event.clear()
-            self._scheduled_time = time.time() + max(0.0, float(delay))
+            self._scheduled_time = time.time() + delay
             self._state = MacroState.SCHEDULED
             print(f"[INFO] 已预约宏，将在 {delay:.2f}s 后启动")
     
     def check_scheduled(self) -> bool:
         """检查并执行预约的宏"""
-        should_start = False
         with self._lock:
-            if (self._state == MacroState.SCHEDULED and
-                self._scheduled_time and
+            if (self._state == MacroState.SCHEDULED and 
+                self._scheduled_time and 
                 time.time() >= self._scheduled_time):
-                should_start = True
-        if should_start:
-            self.start("预约执行")
-            return True
+                self.start("预约执行")
+                return True
         return False
     
     @property
@@ -230,7 +212,7 @@ class MacroController:
             loop_idx = 0
             last_ts = time.time()
             stop_event = self._stop_event
-
+            
             while loop_idx < loops and not stop_event.is_set():
                 ev = events[idx]
                 
@@ -265,11 +247,7 @@ class MacroController:
                     loop_idx += 1
                     idx = 0
                     last_ts = time.time()
-
-        except Exception as e:
-            print(f"[ERROR] MacroWorker 异常: {e}")
-            traceback.print_exc()
-
+        
         finally:
             # 清理状态
             with self._lock:
@@ -287,17 +265,14 @@ class MacroController:
     
     def _swipe_pct(self, start: Tuple[float, float], end: Tuple[float, float], duration_s: float):
         """滑动相对坐标"""
-        x1, y1 = _pct_to_px(start, (self.W, self.H))
-        x2, y2 = _pct_to_px(end, (self.W, self.H))
-        if hasattr(self.adb, "swipe"):
-            self.adb.swipe((x1, y1), (x2, y2), duration_s)
-            return
-
         base = [self.adb.adb]
         if self.adb.serial:
             base += ["-s", self.adb.serial]
-
+        
+        x1, y1 = _pct_to_px(start, (self.W, self.H))
+        x2, y2 = _pct_to_px(end, (self.W, self.H))
         dur_ms = int(max(1, duration_s * 1000))
+        
         cmd = base + ["shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(dur_ms)]
         try:
             subprocess.check_call(cmd, timeout=duration_s + 1)
@@ -334,8 +309,7 @@ def main():
         logging.getLogger().setLevel(logging.WARNING)
 
     # 加载配置
-    with open(args.cfg, "r", encoding="utf-8") as f:
-        cfg = json5.load(f)
+    cfg = json5.load(open(args.cfg, "r", encoding="utf-8"))
     coords = cfg.get("coords", {})
     W, H = cfg["screen"]["width"], cfg["screen"]["height"]
 
@@ -395,12 +369,10 @@ def main():
             state, dbg = det.predict(img)
             
             # 打印状态（限制小数位数）
-            scores_str = {k: round(v, 2) for k, v in dbg.get('scores', {}).items()}
+            scores_str = {k: round(v, 2) for k, v in dbg['scores'].items()}
             print(f"[STATE] {state} scores={scores_str}")
 
-            # 离开 ready/combat 流程时取消预约；离开 combat 时停止宏
-            if state not in ("ready", "combat"):
-                macro_ctrl.cancel_scheduled("离开 ready/combat 流程")
+            # 离开 combat 时停止宏
             if state != "combat" and macro_ctrl.is_running:
                 macro_ctrl.stop("离开 combat")
 
@@ -433,7 +405,7 @@ def main():
                     tap_px(x, y, label=state)
                 
                 # 点击 ready 后预约宏
-                if state == "ready" and prev_state != "ready" and args.prestart_macro and macro_ctrl.has_events:
+                if state == "ready" and args.prestart_macro and macro_ctrl.has_events:
                     macro_ctrl.schedule(args.prestart_delay)
             
             elif state == "combat":
@@ -501,11 +473,8 @@ def main():
         if macro_ctrl.is_running:
             macro_ctrl.stop("错误退出")
     finally:
+        # 清理资源
         print("[INFO] 清理资源...")
-        macro_ctrl.cancel_scheduled("程序结束")
-        if macro_ctrl.is_running:
-            macro_ctrl.stop("程序结束")
-        macro_ctrl.wait_for_completion(timeout=3.0)
 
 
 if __name__ == "__main__":

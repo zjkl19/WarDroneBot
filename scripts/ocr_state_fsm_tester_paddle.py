@@ -10,6 +10,7 @@ import os
 import re
 import importlib.util
 from typing import List, Tuple, Dict, Any
+import time
 
 import cv2
 import json5
@@ -31,6 +32,52 @@ try:
         libpaddle.AnalysisConfig.set_optimization_level = lambda self, level: None
 except Exception:
     pass
+
+
+def _guess_model_root(explicit_root: str | None) -> str | None:
+    candidates: List[str] = []
+    if explicit_root:
+        candidates.append(explicit_root)
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    candidates.append(os.path.join(repo_root, "models", "paddleocr", "whl"))
+    candidates.append(os.path.join(os.path.expanduser("~"), ".paddleocr", "whl"))
+    for base in candidates:
+        if base and os.path.isdir(base):
+            return base
+    return None
+
+
+def _pick_dir(base: str, rels: List[str]) -> str | None:
+    for rel in rels:
+        path = os.path.join(base, rel)
+        if os.path.isdir(path):
+            return path
+    return None
+
+
+def _resolve_model_dirs(
+    det_dir: str | None,
+    rec_dir: str | None,
+    cls_dir: str | None,
+    model_root: str | None = None,
+) -> Tuple[str | None, str | None, str | None, str | None]:
+    base = _guess_model_root(model_root)
+    if not base:
+        return det_dir, rec_dir, cls_dir, None
+
+    det_dir = det_dir or _pick_dir(base, [
+        os.path.join("det", "ch", "ch_PP-OCRv4_det_infer"),
+        os.path.join("det", "ch", "ch_PP-OCRv3_det_infer"),
+    ])
+    rec_dir = rec_dir or _pick_dir(base, [
+        os.path.join("rec", "ch", "ch_PP-OCRv4_rec_infer"),
+        os.path.join("rec", "ch", "ch_PP-OCRv3_rec_infer"),
+    ])
+    cls_dir = cls_dir or _pick_dir(base, [
+        os.path.join("cls", "ch_ppocr_mobile_v2.0_cls_infer"),
+    ])
+
+    return det_dir, rec_dir, cls_dir, base
 
 
 def crop_rel(img, rel: List[float], wh: Tuple[int, int]):
@@ -86,11 +133,14 @@ def _build_ocr(use_gpu: bool, det_dir=None, rec_dir=None, cls_dir=None):
 
 
 class PaddleStateDetector:
-    def __init__(self, cfg_path: str, det_dir=None, rec_dir=None, cls_dir=None):
+    def __init__(self, cfg_path: str, det_dir=None, rec_dir=None, cls_dir=None, model_root=None):
         self.cfg = json5.load(open(cfg_path, "r", encoding="utf-8"))
         self.WH = (self.cfg["screen"]["width"], self.cfg["screen"]["height"])
         self.rois: Dict[str, List[float]] = self.cfg["rois"]
         self.states: List[Dict[str, Any]] = self.cfg["states"]
+        det_dir, rec_dir, cls_dir, resolved_root = _resolve_model_dirs(det_dir, rec_dir, cls_dir, model_root)
+        if resolved_root:
+            print(f"[INFO] Using local PaddleOCR models from: {resolved_root}")
 
         # Prefer GPU, fallback to CPU
         use_gpu = False
@@ -194,6 +244,10 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--image", required=True, help="Image path (png/jpg)")
     ap.add_argument("--cfg", default="configs/ocr_states_fsm.json5", help="FSM config path")
+    ap.add_argument("--model-root", default=None, help="Local PaddleOCR model root (whl).")
+    ap.add_argument("--det-dir", default=None, help="Local det model dir (optional).")
+    ap.add_argument("--rec-dir", default=None, help="Local rec model dir (optional).")
+    ap.add_argument("--cls-dir", default=None, help="Local cls model dir (optional).")
     args = ap.parse_args()
 
     assert os.path.exists(args.image), f"Image not found: {args.image}"
@@ -202,10 +256,19 @@ def main():
     img = cv2.imread(args.image)
     assert img is not None, f"Failed to read image: {args.image}"
 
-    det = PaddleStateDetector(args.cfg)
+    det = PaddleStateDetector(
+        args.cfg,
+        det_dir=args.det_dir,
+        rec_dir=args.rec_dir,
+        cls_dir=args.cls_dir,
+        model_root=args.model_root,
+    )
+    t0 = time.perf_counter()
     state, dbg = det.predict(img)
+    elapsed_ms = (time.perf_counter() - t0) * 1000.0
 
     print(f"PRED: {state}")
+    print(f"TIME: {elapsed_ms:.2f} ms")
     print("SCORES:", {k: round(v, 2) for k, v in dbg["scores"].items()})
 
     for name, detail in dbg["details"].items():

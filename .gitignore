@@ -49,6 +49,9 @@ tests/dataset/
 *.engine
 *.pth
 
+# --- PaddleOCR 本地模型（体积大） ---
+models/paddleocr/
+
 # --- 本地工具虚拟环境 ---
 .venv_labelme/
 

@@ -157,26 +157,48 @@ def main():
             aim_y = clamp(tgt["cy"] + vy * lead_k)
             dist = math.hypot(aim_x - 0.5, aim_y - 0.5)
             if dist > aim_tol:
-                # 先做一次小幅滑动，把准心拉向预瞄点
+                # 计算需要移动的方向（比例坐标）
                 dx = aim_x - 0.5
                 dy = aim_y - 0.5
+                
                 if abs(dx) > swipe_min_offset or abs(dy) > swipe_min_offset:
+                    # 获取滑动区域（比例坐标）
                     sx, sy, sw, sh = swipe_region
-                    start = (sx + sw / 2, sy + sh / 2)
-                    # 限制一次滑动的最大步长，防止拉得过远
-                    step_x = dx * swipe_gain
-                    step_y = dy * swipe_gain
-                    step_len = math.hypot(step_x, step_y)
-                    if step_len > swipe_max_step > 0:
-                        scale = swipe_max_step / step_len
-                        step_x *= scale
-                        step_y *= scale
-                    move_x = clamp(start[0] + step_x)
-                    move_y = clamp(start[1] + step_y)
-                    x1, y1 = _pct_to_px(start, (W, H))
-                    x2, y2 = _pct_to_px((move_x, move_y), (W, H))
-                    dur_ms = int(max(1, swipe_duration * 1000))
+                    
+                    # 计算滑动起点（滑动区域中心）
+                    start_x = sx + sw / 2
+                    start_y = sy + sh / 2
+                    x1, y1 = _pct_to_px((start_x, start_y), (W, H))
+                    
+                    # 将比例移动转换为像素移动（关键修复）
+                    # 使用更小的系数，让滑动更精细
+                    pixel_gain = 50  # 降低这个值可以让滑动更慢更精确
+                    slide_x = dx * pixel_gain
+                    slide_y = dy * pixel_gain
+                    
+                    # 限制最大滑动距离（防止一下子滑太远）
+                    max_slide = 100  # 最大滑动100像素
+                    if abs(slide_x) > max_slide:
+                        slide_x = max_slide if slide_x > 0 else -max_slide
+                    if abs(slide_y) > max_slide:
+                        slide_y = max_slide if slide_y > 0 else -max_slide
+                    
+                    # 计算终点
+                    x2 = int(clamp(x1 + slide_x, 0, W - 1))
+                    y2 = int(clamp(y1 + slide_y, 0, H - 1))
+                    
+                    # 根据滑动距离调整持续时间（距离越远，滑动越慢）
+                    slide_distance = math.hypot(x2 - x1, y2 - y1)
+                    base_duration = swipe_duration * 1000
+                    adaptive_duration = base_duration * (1 + slide_distance / 200)
+                    dur_ms = int(min(adaptive_duration, 300))  # 最长300ms
+                    
+                    # 执行滑动
                     adb._cmd(["shell", "input", "swipe", str(x1), str(y1), str(x2), str(y2), str(dur_ms)])
+                    
+                    # 可选：添加调试信息
+                    print(f"[AIM] 移动准星: ({dx:.3f}, {dy:.3f}) 滑动: {slide_distance:.1f}px")
+                
                 # 本帧不射击，下一帧再判
                 time.sleep(max(0.0, args.interval - (time.time() - t0)))
                 continue
