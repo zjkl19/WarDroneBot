@@ -19,9 +19,11 @@ import json
 import logging
 import threading
 import traceback
+import os
 from typing import Optional, List, Dict, Any, Tuple
 from dataclasses import dataclass
 from enum import Enum
+from datetime import datetime
 
 from war_drone.adb_client import AdbClient
 from war_drone.paddle_state_detector import PaddleStateDetector
@@ -307,6 +309,158 @@ class MacroController:
             print(f"[WARN] 滑动命令失败: {e}")
 
 
+class CombatVideoRecorder:
+    """使用安卓端 screenrecord 录制 combat，并自动拉回电脑。"""
+
+    def __init__(
+        self,
+        adb_client: AdbClient,
+        output_dir: str,
+        size: str,
+        bitrate: int,
+        keep_device_video: bool,
+        overlay: bool,
+        remote_dir: str = "/sdcard/Movies",
+    ):
+        self.adb = adb_client
+        self.output_dir = output_dir
+        self.size = size
+        self.bitrate = max(100_000, int(bitrate))
+        self.keep_device_video = keep_device_video
+        self.overlay = overlay
+        self.remote_dir = remote_dir.rstrip("/") or "/sdcard"
+
+        self._lock = threading.RLock()
+        self._running = False
+        self._proc: Optional[subprocess.Popen] = None
+        self._last_path: Optional[str] = None
+        self._remote_path: Optional[str] = None
+
+    def _adb_base(self) -> List[str]:
+        base = [self.adb.adb]
+        if self.adb.serial:
+            base += ["-s", self.adb.serial]
+        return base
+
+    def _run(self, args: List[str], capture_output: bool = False, timeout: Optional[float] = None):
+        cmd = self._adb_base() + args
+        if capture_output:
+            return subprocess.check_output(cmd, timeout=timeout)
+        subprocess.check_call(cmd, timeout=timeout)
+        return None
+
+    def _build_paths(self) -> Tuple[str, str]:
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"combat_{stamp}.mp4"
+        local_path = os.path.join(self.output_dir, filename)
+        remote_path = f"{self.remote_dir}/{filename}"
+        return local_path, remote_path
+
+    @property
+    def is_running(self) -> bool:
+        with self._lock:
+            if self._proc and self._proc.poll() is not None:
+                self._running = False
+            return self._running
+
+    @property
+    def last_path(self) -> Optional[str]:
+        with self._lock:
+            return self._last_path
+
+    def update_overlay(self, state: str, macro_state: str, combat_count: int, scores: Dict[str, float]):
+        # 安卓端 screenrecord 不支持实时叠加，这里保留接口以兼容主循环调用。
+        return
+
+    def start(self, reason: str = ""):
+        local_path = None
+        remote_path = None
+        with self._lock:
+            if self._running:
+                return
+
+            if self.overlay:
+                print("[WARN] 安卓端 screenrecord 不支持实时叠加调试信息，已忽略 --record-video-overlay")
+
+            os.makedirs(self.output_dir, exist_ok=True)
+            local_path, remote_path = self._build_paths()
+            self._last_path = local_path
+            self._remote_path = remote_path
+
+            try:
+                self._run(["shell", "mkdir", "-p", self.remote_dir], timeout=10)
+            except Exception as e:
+                print(f"[WARN] 创建手机录像目录失败，将继续尝试录制: {e}")
+
+            cmd = self._adb_base() + [
+                "shell",
+                "screenrecord",
+                "--bit-rate", str(self.bitrate),
+                "--size", self.size,
+                remote_path,
+            ]
+            self._proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            time.sleep(0.5)
+            if self._proc.poll() is not None:
+                self._running = False
+                self._proc = None
+                print(f"[WARN] 安卓端录像启动失败: {remote_path}")
+                return
+            self._running = True
+        if reason:
+            print(f"[INFO] 录像启动: {reason} -> {local_path}")
+
+    def stop(self, reason: str = ""):
+        proc = None
+        remote_path = None
+        local_path = None
+        with self._lock:
+            if not self._running:
+                return
+            proc = self._proc
+            remote_path = self._remote_path
+            local_path = self._last_path
+            self._running = False
+            self._proc = None
+
+        try:
+            if proc and proc.poll() is None:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=5.0)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait(timeout=2.0)
+        except Exception as e:
+            print(f"[WARN] 停止安卓端录像进程失败: {e}")
+
+        # 给设备一点时间完成 mp4 封装
+        time.sleep(1.0)
+
+        pulled = False
+        if remote_path and local_path:
+            try:
+                self._run(["pull", remote_path, local_path], timeout=180)
+                pulled = True
+            except Exception as e:
+                print(f"[WARN] 拉回录像失败: {e}")
+
+            if not self.keep_device_video:
+                try:
+                    self._run(["shell", "rm", "-f", remote_path], timeout=10)
+                except Exception as e:
+                    print(f"[WARN] 删除手机临时录像失败: {e}")
+
+        if reason:
+            print(f"[INFO] 录像停止: {reason}")
+        if pulled and local_path:
+            print(f"[INFO] combat 录像已保存: {local_path}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--serial", default=None, help="adb 序列号")
@@ -324,6 +478,13 @@ def main():
     ap.add_argument("--max-combat", type=int, default=0, help="combat 状态执行的最大次数（0=不限制，按进入combat计数）")
     ap.add_argument("--prestart-macro", action="store_true", help="点击 ready 后延时播放宏，不等 OCR 判定 combat")
     ap.add_argument("--prestart-delay", type=float, default=0.0, help="ready 点击后延时多少秒启动宏")
+    ap.add_argument("--record-combat-video", action="store_true", help="仅在 combat 状态时录制视频")
+    ap.add_argument("--record-video-dir", default="recordings/videos", help="combat 录像输出目录")
+    ap.add_argument("--record-video-size", default="1280x576", help="安卓端录像分辨率，例如 1280x576")
+    ap.add_argument("--record-video-bitrate", type=int, default=3000000, help="安卓端录像码率，单位 bps")
+    ap.add_argument("--record-video-remote-dir", default="/sdcard/Movies", help="安卓端临时录像目录")
+    ap.add_argument("--keep-device-video", action="store_true", help="保留手机上的临时录像文件")
+    ap.add_argument("--record-video-overlay", action="store_true", help="在录像中叠加状态/得分等调试信息")
     ap.add_argument("--quiet", action="store_true", help="减少日志输出（压低 paddleocr 日志）")
     args = ap.parse_args()
 
@@ -345,6 +506,19 @@ def main():
     
     # 初始化宏控制器
     macro_ctrl = MacroController(adb, (W, H))
+
+    # 初始化录像器
+    video_recorder = None
+    if args.record_combat_video:
+        video_recorder = CombatVideoRecorder(
+            adb_client=adb,
+            output_dir=args.record_video_dir,
+            size=args.record_video_size,
+            bitrate=args.record_video_bitrate,
+            keep_device_video=args.keep_device_video,
+            overlay=args.record_video_overlay,
+            remote_dir=args.record_video_remote_dir,
+        )
     
     # 加载宏
     if args.combat_macro:
@@ -398,11 +572,21 @@ def main():
             scores_str = {k: round(v, 2) for k, v in dbg.get('scores', {}).items()}
             print(f"[STATE] {state} scores={scores_str}")
 
+            if video_recorder:
+                video_recorder.update_overlay(
+                    state=state,
+                    macro_state="running" if macro_ctrl.is_running else "idle",
+                    combat_count=combat_count,
+                    scores=scores_str,
+                )
+
             # 离开 ready/combat 流程时取消预约；离开 combat 时停止宏
             if state not in ("ready", "combat"):
                 macro_ctrl.cancel_scheduled("离开 ready/combat 流程")
             if state != "combat" and macro_ctrl.is_running:
                 macro_ctrl.stop("离开 combat")
+            if state != "combat" and video_recorder and video_recorder.is_running:
+                video_recorder.stop("离开 combat")
 
             if args.dry_run:
                 prev_state = state
@@ -455,6 +639,8 @@ def main():
                     # 启动宏（如果有）
                     if macro_ctrl.has_events:
                         macro_ctrl.start("进入 combat")
+                    if video_recorder:
+                        video_recorder.start("进入 combat")
                 
                 # 处理 combat 内的操作
                 if macro_ctrl.is_running:
@@ -494,18 +680,24 @@ def main():
             macro_ctrl.stop("用户中断")
             # 等待最多2秒让宏退出
             macro_ctrl.wait_for_completion(timeout=2.0)
+        if video_recorder and video_recorder.is_running:
+            video_recorder.stop("用户中断")
         print("[INFO] 已退出")
     except Exception as e:
         print(f"[ERROR] 运行时错误: {e}")
         # 确保宏被停止
         if macro_ctrl.is_running:
             macro_ctrl.stop("错误退出")
+        if video_recorder and video_recorder.is_running:
+            video_recorder.stop("错误退出")
     finally:
         print("[INFO] 清理资源...")
         macro_ctrl.cancel_scheduled("程序结束")
         if macro_ctrl.is_running:
             macro_ctrl.stop("程序结束")
         macro_ctrl.wait_for_completion(timeout=3.0)
+        if video_recorder and video_recorder.is_running:
+            video_recorder.stop("程序结束")
 
 
 if __name__ == "__main__":
