@@ -1,6 +1,9 @@
 
 PS D:\PythonProjects\WarDroneBot> .\.venv\Scripts\Activate.ps1
 
+20260309stable
+python -m scripts.paddle_runner --serial e5081c2a --combat-macro recordings/mission12_01.json  --combat-macro-loops 1 --max-combat 3  --cfg configs/ocr_states_fsm.json5
+
 python -m scripts.paddle_runner --serial e5081c2a 
   --cfg configs/ocr_states_fsm.json5 
   --det-dir "E:\.paddleocr\whl\det\ch_PP-OCRv4_det_infer" 
