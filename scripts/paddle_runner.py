@@ -24,6 +24,7 @@ from typing import Optional, List, Dict, Any, Tuple
 from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime
+import cv2
 
 from war_drone.adb_client import AdbClient
 from war_drone.paddle_state_detector import PaddleStateDetector
@@ -320,6 +321,7 @@ class CombatVideoRecorder:
         bitrate: int,
         keep_device_video: bool,
         overlay: bool,
+        reverse_video: bool,
         remote_dir: str = "/sdcard/Movies",
     ):
         self.adb = adb_client
@@ -328,6 +330,7 @@ class CombatVideoRecorder:
         self.bitrate = max(100_000, int(bitrate))
         self.keep_device_video = keep_device_video
         self.overlay = overlay
+        self.reverse_video = reverse_video
         self.remote_dir = remote_dir.rstrip("/") or "/sdcard"
 
         self._lock = threading.RLock()
@@ -356,6 +359,10 @@ class CombatVideoRecorder:
         remote_path = f"{self.remote_dir}/{filename}"
         return local_path, remote_path
 
+    def _build_reverse_path(self, local_path: str) -> str:
+        stem, ext = os.path.splitext(local_path)
+        return f"{stem}_reverse{ext}"
+
     @property
     def is_running(self) -> bool:
         with self._lock:
@@ -371,6 +378,49 @@ class CombatVideoRecorder:
     def update_overlay(self, state: str, macro_state: str, combat_count: int, scores: Dict[str, float]):
         # 安卓端 screenrecord 不支持实时叠加，这里保留接口以兼容主循环调用。
         return
+
+    def _write_reverse_copy(self, local_path: str) -> Optional[str]:
+        cap = cv2.VideoCapture(local_path)
+        if not cap.isOpened():
+            print(f"[WARN] 无法打开录像，跳过倒放生成: {local_path}")
+            return None
+
+        try:
+            frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+            width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH) or 0)
+            height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT) or 0)
+            fps = float(cap.get(cv2.CAP_PROP_FPS) or 0.0)
+            if frame_count <= 0 or width <= 0 or height <= 0:
+                print(f"[WARN] 录像元数据无效，跳过倒放生成: {local_path}")
+                return None
+            if fps <= 0:
+                fps = 10.0
+
+            reverse_path = self._build_reverse_path(local_path)
+            writer = cv2.VideoWriter(
+                reverse_path,
+                cv2.VideoWriter_fourcc(*"mp4v"),
+                fps,
+                (width, height),
+            )
+            if not writer.isOpened():
+                print(f"[WARN] 无法创建倒放文件，跳过: {reverse_path}")
+                return None
+
+            try:
+                for idx in range(frame_count - 1, -1, -1):
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+                    ok, frame = cap.read()
+                    if not ok:
+                        print(f"[WARN] 倒放生成时读取第 {idx} 帧失败，已提前结束")
+                        break
+                    writer.write(frame)
+            finally:
+                writer.release()
+
+            return reverse_path
+        finally:
+            cap.release()
 
     def start(self, reason: str = ""):
         local_path = None
@@ -459,6 +509,10 @@ class CombatVideoRecorder:
             print(f"[INFO] 录像停止: {reason}")
         if pulled and local_path:
             print(f"[INFO] combat 录像已保存: {local_path}")
+            if self.reverse_video:
+                reverse_path = self._write_reverse_copy(local_path)
+                if reverse_path:
+                    print(f"[INFO] combat 倒放已保存: {reverse_path}")
 
 
 def main():
@@ -485,6 +539,7 @@ def main():
     ap.add_argument("--record-video-remote-dir", default="/sdcard/Movies", help="安卓端临时录像目录")
     ap.add_argument("--keep-device-video", action="store_true", help="保留手机上的临时录像文件")
     ap.add_argument("--record-video-overlay", action="store_true", help="在录像中叠加状态/得分等调试信息")
+    ap.add_argument("--record-video-reverse", action="store_true", help="额外生成一个本地倒放视频")
     ap.add_argument("--quiet", action="store_true", help="减少日志输出（压低 paddleocr 日志）")
     args = ap.parse_args()
 
@@ -517,6 +572,7 @@ def main():
             bitrate=args.record_video_bitrate,
             keep_device_video=args.keep_device_video,
             overlay=args.record_video_overlay,
+            reverse_video=args.record_video_reverse,
             remote_dir=args.record_video_remote_dir,
         )
     

@@ -4,6 +4,8 @@ PS D:\PythonProjects\WarDroneBot> .\.venv\Scripts\Activate.ps1
 20260310stable
 python -m scripts.paddle_runner --serial e5081c2a --combat-macro recordings/mission12_01.json --combat-macro-loops 1 --max-combat 1 --record-combat-video
 
+python -m scripts.paddle_runner --serial e5081c2a --combat-macro recordings/mission12_01.json --combat-macro-loops 1 --max-combat 1 --record-combat-video --record-video-reverse
+
 
 
 python -m scripts.paddle_runner --serial e5081c2a 
