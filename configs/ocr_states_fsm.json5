@@ -29,6 +29,9 @@
     piggy_full_panel:   [0.652809, 0.250833, 0.268165, 0.136667],
     piggy_full_title:   [0.776404, 0.448333, 0.091386, 0.056667],   // 储蓄罐弹窗标题（你已储蓄了）
     piggy_full_desc:    [0.735206, 0.685, 0.08015, 0.051667],   // 弹窗正文/按钮区域（立刻打开）
+    bankrupt_sale_title:    [0.278, 0.243, 0.30, 0.17],   // “破产促销”标题
+    bankrupt_sale_subtitle: [0.286, 0.395, 0.34, 0.06],   // “以超大折扣获得现金和黄金”
+    bankrupt_sale_skip:     [0.261, 0.798, 0.22, 0.12],   // 左下角“错过”按钮
     ad_panel:           [0.50, 0.50, 0.70, 0.30],
 
     // 武器界面
@@ -105,6 +108,15 @@
         { roi: "piggy_full_panel", lang: "ch_sim", contains: ["储蓄罐已满","满了"], min_conf: 0.70 },
         { roi: "piggy_full_title", lang: "ch_sim", contains: ["你已储蓄了"], min_conf: 0.70 },
         { roi: "piggy_full_desc", lang: "ch_sim", contains: ["打开","优惠","储蓄"], min_conf: 0.70 }
+      ]
+    },
+    {
+      name: "bankrupt_sale",
+      rois: ["bankrupt_sale_title", "bankrupt_sale_subtitle", "bankrupt_sale_skip"],
+      ocr: [
+        { roi: "bankrupt_sale_title", lang: "ch_sim", contains: ["破产促销"], min_conf: 0.70 },
+        { roi: "bankrupt_sale_subtitle", lang: "ch_sim", contains: ["以超大折扣获得现金和黄金"], min_conf: 0.55 },
+        { roi: "bankrupt_sale_skip", lang: "ch_sim", contains: ["错过"], min_conf: 0.70 }
       ]
     },
     {
