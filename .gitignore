@@ -23,6 +23,7 @@ htmlcov/
 # --- 日志与运行时产物 ---
 logs/
 *.log
+recordings/videos/
 
 # --- 临时截图/可视化输出 ---
 out_vis/
