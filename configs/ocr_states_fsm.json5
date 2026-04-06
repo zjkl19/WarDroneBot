@@ -32,6 +32,9 @@
     bankrupt_sale_title:    [0.278, 0.243, 0.30, 0.17],   // “破产促销”标题
     bankrupt_sale_subtitle: [0.286, 0.395, 0.34, 0.06],   // “以超大折扣获得现金和黄金”
     bankrupt_sale_skip:     [0.261, 0.798, 0.22, 0.12],   // 左下角“错过”按钮
+    major_news_title:       [0.526, 0.276, 0.24, 0.12],   // “重大新闻！”标题
+    major_news_subtitle:    [0.526, 0.392, 0.36, 0.08],   // “此游戏已推出新版本。是否更新？”
+    major_news_skip:        [0.404, 0.638, 0.22, 0.10],   // 左侧“不用了，谢谢”按钮
     ad_panel:           [0.50, 0.50, 0.70, 0.30],
 
     // 武器界面
@@ -117,6 +120,15 @@
         { roi: "bankrupt_sale_title", lang: "ch_sim", contains: ["破产促销"], min_conf: 0.70 },
         { roi: "bankrupt_sale_subtitle", lang: "ch_sim", contains: ["以超大折扣获得现金和黄金"], min_conf: 0.55 },
         { roi: "bankrupt_sale_skip", lang: "ch_sim", contains: ["错过"], min_conf: 0.70 }
+      ]
+    },
+    {
+      name: "major_news",
+      rois: ["major_news_title", "major_news_subtitle", "major_news_skip"],
+      ocr: [
+        { roi: "major_news_title", lang: "ch_sim", contains: ["重大新闻"], min_conf: 0.70 },
+        { roi: "major_news_subtitle", lang: "ch_sim", contains: ["此游戏已推出新版本"], min_conf: 0.55 },
+        { roi: "major_news_skip", lang: "ch_sim", contains: ["不用了"], min_conf: 0.70 }
       ]
     },
     {
